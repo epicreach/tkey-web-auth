@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2022 Tillitis AB <tillitis.se>
 // SPDX-License-Identifier: BSD-2-Clause
 
-package main
+package tkey
 
 import (
 	"crypto"
