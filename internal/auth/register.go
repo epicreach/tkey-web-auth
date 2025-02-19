@@ -66,7 +66,7 @@ func sendRequest(pubkey []byte, username string) {
 	}
 	defer resp.Body.Close()
 
-	if resp.Status != "200" {
+	if resp.StatusCode != http.StatusOK {
 		fmt.Printf("Could not create user! Error: %s", resp.Status)
 		log.Fatal()
 	} else {

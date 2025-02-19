@@ -42,7 +42,7 @@ func Login() error {
 		return err
 	}
 
-	if resp.StatusCode != 200 {
+	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("error in response when sending signature")
 	}
 
@@ -80,7 +80,7 @@ func getChallenge(user string) (*LoginResponse, error) {
 		return nil, err
 	}
 
-	if resp.StatusCode != 200 {
+	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("error in response when requesting challenge")
 	}
 
@@ -114,7 +114,7 @@ func getChallenge(user string) (*LoginResponse, error) {
 // 		return nil, err
 // 	}
 
-// 	if resp.StatusCode != 200 {
+// 	if resp.StatusCode != http.StatusOK {
 // 		return nil, fmt.Errorf("error in response when getting public key")
 // 	}
 
