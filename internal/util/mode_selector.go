@@ -10,7 +10,7 @@ import (
 var le = log.New(os.Stderr, "Error: ", 0)
 
 func SelectMode() int {
-	fmt.Println("Select Mode:")
+	fmt.Println("\nSelect Mode:")
 	fmt.Println("1. Register")
 	fmt.Println("2. Login")
 	fmt.Println("3. Exit")
@@ -25,8 +25,6 @@ func CallLogin() {
 	err := auth.Login()
 	if err != nil {
 		le.Println(err)
-	} else {
-		fmt.Println("user logged in")
 	}
 }
 
@@ -34,7 +32,5 @@ func CallRegister() {
 	err := auth.Register()
 	if err != nil {
 		le.Println(err)
-	} else {
-		fmt.Println("user registered")
 	}
 }

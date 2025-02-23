@@ -2,7 +2,7 @@ package structs
 
 type RegisterRequest struct {
 	Username string `json:"username"`
-	Pubkey   string `json:"pubkey"`
+	Pubkey   []byte `json:"pubkey"`
 }
 
 type LoginRequest struct {
@@ -16,5 +16,8 @@ type LoginResponse struct {
 
 type VerifyRequest struct {
 	Username  string `json:"username"`
-	Signature string `json:"signature"`
+	Signature []byte `json:"signature"`
+}
+
+type VerifyResponse struct {
 }

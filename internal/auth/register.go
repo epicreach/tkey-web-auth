@@ -2,7 +2,9 @@ package auth
 
 import (
 	"bytes"
+	. "chalmers/tkey-group22/internal/structs"
 	"chalmers/tkey-group22/internal/tkey"
+	"crypto/ed25519"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -13,7 +15,7 @@ const regurl = "http://localhost:8080/api/register"
 
 func Register() error {
 
-	username := getUsername()
+	username := GetUsername()
 
 	pubkey, err := tkey.GetTkeyPubKey()
 	if err != nil {
@@ -25,52 +27,34 @@ func Register() error {
 	return nil
 }
 
-func getUsername() string {
-	var username string
-	fmt.Print("Please enter username: ")
-	fmt.Scan(&username)
-	return username
-}
+func sendRequest(pubkey ed25519.PublicKey, username string) {
+	c := &http.Client{}
 
-func convertToJSON(data map[string]string) []byte {
-	jsonData, err := json.Marshal(data)
+	data := RegisterRequest{Username: username, Pubkey: []byte(pubkey)}
+
+	reqBody, err := json.Marshal(data)
 	if err != nil {
 		log.Fatal(err)
 	}
-	return jsonData
-}
 
-func createRequest(jsonData []byte, url string) *http.Request {
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
+	res, err := c.Post(regurl, "application/json", bytes.NewBuffer(reqBody))
 	if err != nil {
 		log.Fatal(err)
 	}
-	return req
-}
 
-func sendRequest(pubkey []byte, username string) {
+	defer res.Body.Close()
 
-	pubkeyStr := string(pubkey[:])
-	data := map[string]string{"username": username, "pubkey": pubkeyStr}
-
-	jsonData := convertToJSON(data)
-
-	req := createRequest(jsonData, regurl)
-
-	req.Header.Set("Content-Type", "application/json")
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		fmt.Printf("Could not create user! Error: %s", resp.Status)
-		log.Fatal()
-	} else {
-		fmt.Printf("User '%s' has been successfully created!", username)
+	switch res.StatusCode {
+	case http.StatusOK:
+		fmt.Printf("User '%s' has been successfully created!\n", username)
+	case http.StatusConflict:
+		fmt.Printf("User '%s' already exists!\n", username)
+	case http.StatusBadRequest:
+		fmt.Printf("Invalid request body for user '%s'\n", username)
+	case http.StatusInternalServerError:
+		fmt.Printf("Unable to save user data for user '%s'\n", username)
+	default:
+		fmt.Printf("Unexpected error: %s\n", res.Status)
 	}
 
 }

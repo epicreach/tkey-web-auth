@@ -3,14 +3,15 @@ package auth
 import (
 	"bytes"
 	. "chalmers/tkey-group22/internal/structs"
-	. "chalmers/tkey-group22/internal/tkey"
+	"chalmers/tkey-group22/internal/tkey"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 )
 
 func Login() error {
-	username := getUsername()
+	username := GetUsername()
 
 	c := &http.Client{}
 
@@ -42,8 +43,17 @@ func Login() error {
 		return err
 	}
 
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("error in response when sending signature")
+	switch resp.StatusCode {
+	case http.StatusOK:
+		fmt.Printf("User '%s' has been successfully logged in!\n", username)
+	case http.StatusUnauthorized:
+		return fmt.Errorf("invalid signature")
+	case http.StatusNotFound:
+		return fmt.Errorf("no active challenge found for the user")
+	case http.StatusInternalServerError:
+		return fmt.Errorf("unable to read user data")
+	default:
+		return fmt.Errorf("unexpected error: %s", resp.Status)
 	}
 
 	return nil
@@ -51,14 +61,15 @@ func Login() error {
 
 func signChallenge(username string, challenge *LoginResponse) (*VerifyRequest, error) {
 	// Sign the challenge
-	sig, err := Sign([]byte(challenge.Challenge))
+	fmt.Printf("Touch the TKey to continue...\n")
+	sig, err := tkey.Sign([]byte(challenge.Challenge))
 	if err != nil {
 		return nil, err
 	}
 
 	return &VerifyRequest{
 		Username:  username,
-		Signature: string(sig),
+		Signature: sig,
 	}, nil
 }
 
@@ -80,12 +91,26 @@ func getChallenge(user string) (*LoginResponse, error) {
 		return nil, err
 	}
 
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("error in response when requesting challenge")
+	switch resp.StatusCode {
+	case http.StatusOK:
+		// Continue processing
+	case http.StatusNotFound:
+		return nil, fmt.Errorf("user not found")
+	case http.StatusBadRequest:
+		return nil, fmt.Errorf("invalid request body or missing username")
+	case http.StatusInternalServerError:
+		return nil, fmt.Errorf("unable to read user data")
+	default:
+		return nil, fmt.Errorf("unexpected error: %s", resp.Status)
+	}
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("error reading response body")
 	}
 
 	var res *LoginResponse
-	err = json.Unmarshal(body, &res)
+	err = json.Unmarshal(respBody, &res)
 
 	if err != nil {
 		return nil, fmt.Errorf("error decoding challenge response")

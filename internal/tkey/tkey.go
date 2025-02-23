@@ -8,14 +8,13 @@ import (
 	"os"
 
 	"github.com/tillitis/tkeyclient"
-	"golang.org/x/crypto/ssh"
 )
 
 const progname = "tkey-device-signer"
 
 var le = log.New(os.Stderr, "Error: ", 0)
 
-func GetTkeyPubKey() ([]byte, error) {
+func GetTkeyPubKey() (ed25519.PublicKey, error) {
 	signer, err := getSigner()
 
 	if err != nil {
@@ -35,9 +34,11 @@ func GetTkeyPubKey() ([]byte, error) {
 		return nil, err
 	}
 
-	sshPub, _ := ssh.NewPublicKey(ed25519.PublicKey(pub))
+	pubkey := ed25519.PublicKey(pub)
 
-	return ssh.MarshalAuthorizedKey(sshPub), nil
+	signer.printAuthorizedKey()
+
+	return pubkey, nil
 }
 
 func Sign(msg []byte) ([]byte, error) {
