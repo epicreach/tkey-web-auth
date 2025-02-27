@@ -180,7 +180,7 @@ func (s *Signer) isWantedApp() bool {
 func (s *Signer) loadApp() error {
 	var secret []byte
 	if s.enterUSS {
-		secret = []byte{}
+		secret, _ = tkeyutil.InputUSS()
 	} else if s.fileUSS != "" {
 		var err error
 		secret, err = tkeyutil.ReadUSS(s.fileUSS)
