@@ -180,7 +180,16 @@ func (s *Signer) isWantedApp() bool {
 func (s *Signer) loadApp() error {
 	var secret []byte
 	if s.enterUSS {
-		secret, _ = tkeyutil.InputUSS()
+		udi, err := s.tk.GetUDI()
+		if err != nil {
+			return fmt.Errorf("failed to get UDI: %w", err)
+		}
+
+		secret, err = getSecret(udi.String(), s.pinentry)
+		if err != nil {
+			notify(fmt.Sprintf("could not show USS prompt: %s", errors.Unwrap(err)))
+			return fmt.Errorf("failed to get USS: %w", err)
+		}
 	} else if s.fileUSS != "" {
 		var err error
 		secret, err = tkeyutil.ReadUSS(s.fileUSS)

@@ -1,13 +1,11 @@
 package tkey
 
 import (
-	"bufio"
 	"crypto"
 	"crypto/ed25519"
 	"fmt"
 	"log"
 	"os"
-	"strings"
 
 	"github.com/tillitis/tkeyclient"
 )
@@ -85,21 +83,8 @@ func getSigner() (*Signer, error) {
 		os.Exit(0)
 	}
 
-	reader := bufio.NewReader(os.Stdin)
-	fmt.Print("Do you want to enter a manual User Supplied Secret (USS) or provide a USS file? (m/f/n): ")
-	response, _ := reader.ReadString('\n')
-	response = strings.TrimSpace(strings.ToLower(response))
-
-	enterUSS := false
+	enterUSS := true
 	fileUSS := ""
-
-	if response == "m" {
-		enterUSS = true
-	} else if response == "f" {
-		fmt.Print("Please provide the path to the USS file: ")
-		fileUSS, _ = reader.ReadString('\n')
-		fileUSS = strings.TrimSpace(fileUSS)
-	}
 
 	signer := NewSigner(devPath, serialSpeed, enterUSS, fileUSS, "", exit)
 	existingSigner = signer
