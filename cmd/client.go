@@ -8,11 +8,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
-
-	"github.com/gorilla/sessions"
 )
-
-var store = sessions.NewCookieStore([]byte("your-secret-key"))
 
 func main() {
 	// Define a flag to choose between cmd-client and web-client
@@ -63,9 +59,13 @@ func startWebClient() {
 
 func enableCors(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
+		origin := r.Header.Get("Origin")
+		if origin == "http://localhost:8080" || origin == "http://localhost:3000" {
+			w.Header().Set("Access-Control-Allow-Origin", origin)
+		}
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
 		if r.Method == http.MethodOptions {
 			w.WriteHeader(http.StatusOK)
 			return
@@ -75,8 +75,8 @@ func enableCors(next http.Handler) http.Handler {
 }
 
 func loginHandler(w http.ResponseWriter, r *http.Request) {
-	origin := r.Header.Get("Origin")
-	origin = replaceOriginPort(origin)
+	//origin := r.Header.Get("Origin")
+	//origin = replaceOriginPort(origin)
 
 	var requestBody map[string]string
 	if err := json.NewDecoder(r.Body).Decode(&requestBody); err != nil {
@@ -84,33 +84,12 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	username := requestBody["username"]
-
-	err := auth.Login(origin, username)
+	err := auth.Login("http://localhost:8080", username)
 	if err != nil {
 		http.Error(w, "Failed to log in", http.StatusBadRequest)
 		return
 	}
-	// stores username in session and sets authenticated to true
-	session, _ := store.Get(r, "session-name")
-	session.Values["authenticated"] = true
-	session.Values["username"] = username
 
-	// session length is 1 hour and can only be sent via https (works on localhost)
-	session.Options = &sessions.Options{
-		Path:     "/",
-		MaxAge:   3600,
-		HttpOnly: true,
-		Secure:   true,
-	}
-
-	err = session.Save(r, w)
-	if err != nil {
-		http.Error(w, "Failed to save session", http.StatusInternalServerError)
-		return
-	}
-
-	session_user := session.Values["username"]
-	fmt.Printf("Session user is: %s", session_user)
 }
 
 func registerHandler(w http.ResponseWriter, r *http.Request) {
