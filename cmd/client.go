@@ -1,8 +1,11 @@
+// Package main starts the client application and provides the user with a choice between a command-line client and a web client.
+// The command-line client allows the user to register and log in to the application.
+// The web client allows the user to register and log in to the application through a web interface.
 package main
 
 import (
-	"chalmers/tkey-group22/internal/auth"
-	"chalmers/tkey-group22/internal/util"
+	"chalmers/tkey-group22/client/internal/auth"
+	"chalmers/tkey-group22/client/internal/util"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -28,7 +31,6 @@ func main() {
 }
 
 func startCmdClient() {
-
 	// Gets mode from user inputs and runs selected mode. Loops until program is told to exit.
 	for {
 		mode := util.SelectMode()
@@ -49,10 +51,10 @@ func startCmdClient() {
 	}
 }
 
+// Starts http listeners for the web client to use
 func startWebClient() {
 	http.Handle("/api/register", enableCors(http.HandlerFunc(registerHandler)))
 	http.Handle("/api/login", enableCors(http.HandlerFunc(loginHandler)))
-
 	fmt.Println("Client running on http://localhost:6060")
 	http.ListenAndServe(":6060", nil)
 }
@@ -74,9 +76,12 @@ func enableCors(next http.Handler) http.Handler {
 	})
 }
 
+// Handles login requests from the web client
 func loginHandler(w http.ResponseWriter, r *http.Request) {
-	//origin := r.Header.Get("Origin")
-	//origin = replaceOriginPort(origin)
+	// Get origin from request header and replace port with 8080
+	// We use this order to be able to know what to send to auth.Login
+	origin := r.Header.Get("Origin")
+	origin = replaceOriginPort(origin)
 
 	var requestBody map[string]string
 	if err := json.NewDecoder(r.Body).Decode(&requestBody); err != nil {
@@ -89,10 +94,12 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to log in", http.StatusBadRequest)
 		return
 	}
-
 }
 
+// Handles register requests from the web client
 func registerHandler(w http.ResponseWriter, r *http.Request) {
+	// Get origin from request header and replace port with 8080
+	// We use this order to be able to know what to send to auth.Register
 	origin := r.Header.Get("Origin")
 	origin = replaceOriginPort(origin)
 

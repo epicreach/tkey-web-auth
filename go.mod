@@ -1,4 +1,4 @@
-module chalmers/tkey-group22
+module chalmers/tkey-group22/client
 
 go 1.24
 
