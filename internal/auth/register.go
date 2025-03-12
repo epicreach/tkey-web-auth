@@ -11,24 +11,25 @@ import (
 	"net/http"
 )
 
-// Register registers a new user with the given username at the specified app URL
-// This reqires that the app has the /api/register endpoint
+// Register registers a new user with the given username and label at the specified app URL
+// This requires that the app has the /api/register endpoint
 // It returns an error if the registration process fails
 //
 // Parameters:
 //   - appurl: The base URL of the application where the user will be registered
 //   - username: The username of the user to be registered
+//   - label: The label for the public key
 //
 // Returns:
 //   - error: An error if the registration process fails, otherwise nil
-func Register(appurl string, username string) error {
+func Register(appurl string, username string, label string) error {
 	pubkey, err := tkey.GetTkeyPubKey()
 	if err != nil {
 		return err
 	}
 
 	regurl := appurl + "/api/register"
-	err = sendRequest(regurl, pubkey, username)
+	err = sendRequest(regurl, pubkey, username, label)
 	if err != nil {
 		return err
 	}
@@ -36,20 +37,21 @@ func Register(appurl string, username string) error {
 	return nil
 }
 
-// sendRequest sends a registration request to the specified application URL with the provided public key and username
+// sendRequest sends a registration request to the specified application URL with the provided public key, username, and label
 // It returns an error if the request fails or if the server responds with a status code indicating an error
 //
 // Parameters:
 // - appurl: The URL of the application to which the registration request is sent
 // - pubkey: The public key of the user being registered
 // - username: The username of the user being registered
+// - label: The label for the public key
 //
 // Returns:
 // - An error if the request fails or if the server responds with an error status code
-func sendRequest(appurl string, pubkey ed25519.PublicKey, username string) error {
+func sendRequest(appurl string, pubkey ed25519.PublicKey, username string, label string) error {
 	c := &http.Client{}
 
-	data := RegisterRequest{Username: username, Pubkey: []byte(pubkey)}
+	data := RegisterRequest{Username: username, Pubkey: []byte(pubkey), Label: label}
 	reqBody, err := json.Marshal(data)
 	if err != nil {
 		log.Fatal(err)

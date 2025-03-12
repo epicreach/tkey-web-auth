@@ -38,11 +38,12 @@ func CallLogin() {
 	}
 }
 
-// CallRegister retrieves the username and attempts to register it with the authentication service
+// CallRegister retrieves the username and label, and attempts to register it with the authentication service
 // If an error occurs during the registration process, it prints the error
 func CallRegister() {
 	username := getUsername()
-	err := auth.Register(appurl, username)
+	label := getLabel()
+	err := auth.Register(appurl, username, label)
 	if err != nil {
 		le.Println(err)
 	}
@@ -57,4 +58,15 @@ func getUsername() string {
 	fmt.Print("Please enter username: ")
 	username, _ := reader.ReadString('\n')
 	return strings.TrimSpace(username)
+}
+
+// getLabel gets the label for the public key from the user
+//
+// Returns:
+// - string: The label entered by the user
+func getLabel() string {
+	reader := bufio.NewReader(os.Stdin)
+	fmt.Print("Please enter label for the public key: ")
+	label, _ := reader.ReadString('\n')
+	return strings.TrimSpace(label)
 }
