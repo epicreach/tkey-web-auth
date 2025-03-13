@@ -64,9 +64,7 @@ func startWebClient() {
 func enableCors(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		origin := r.Header.Get("Origin")
-		if origin == "http://localhost:8080" || origin == "http://localhost:3000" {
-			w.Header().Set("Access-Control-Allow-Origin", origin)
-		}
+		w.Header().Set("Access-Control-Allow-Origin", origin)
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
@@ -91,11 +89,15 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	username := requestBody["username"]
-	err := auth.Login("http://localhost:8080", username)
+	cookie, err := auth.Login(origin, username)
 	if err != nil {
 		http.Error(w, "Failed to log in", http.StatusBadRequest)
 		return
 	}
+
+	//Takes the cookie returned from Login() and writes it to the response
+	http.SetCookie(w, cookie)
+	w.Write([]byte("Login successful and cookie sent"))
 }
 
 // Handles register requests from the web client
@@ -119,7 +121,7 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 
 	username := requestBody["username"]
 	label := requestBody["label"]
-	err := auth.Register("http://localhost:8080", username, label)
+	err := auth.Register(origin, username, label)
 	if err != nil {
 		http.Error(w, "Failed to register", http.StatusBadRequest)
 		return
@@ -150,7 +152,7 @@ func addPublicKeyHandler(w http.ResponseWriter, r *http.Request) {
 	username := requestBody["username"]
 	label := requestBody["label"]
 	sessionCookie := r.Header.Get("Cookie")
-	err := auth.AddPublicKey("http://localhost:8080", username, label, sessionCookie)
+	err := auth.AddPublicKey(origin, username, label, sessionCookie)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -182,7 +184,7 @@ func removePublicKeyHandler(w http.ResponseWriter, r *http.Request) {
 	username := requestBody["username"]
 	label := requestBody["label"]
 	sessionCookie := r.Header.Get("Cookie")
-	err := auth.RemovePublicKey("http://localhost:8080", username, label, sessionCookie)
+	err := auth.RemovePublicKey(origin, username, label, sessionCookie)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
