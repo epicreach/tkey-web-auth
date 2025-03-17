@@ -5,6 +5,7 @@ package main
 
 import (
 	"chalmers/tkey-group22/client/internal/auth"
+	. "chalmers/tkey-group22/client/internal/structs"
 	"chalmers/tkey-group22/client/internal/util"
 	"encoding/json"
 	"flag"
@@ -76,7 +77,9 @@ func enableCors(next http.Handler) http.Handler {
 	})
 }
 
-// Handles login requests from the web client
+// Gets a username to attempt to sign in on. Will return a signed challenge. It expects a POST
+// request with a JSON body containing a username.
+
 func loginHandler(w http.ResponseWriter, r *http.Request) {
 	// Get origin from request header and replace port with 8080
 	// We use this order to be able to know what to send to auth.Login
@@ -88,15 +91,22 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	username := requestBody["username"]
-	cookie, err := auth.Login(origin, username)
+	user, signedChallenge, err := auth.GetAndSign(origin, username)
 	if err != nil {
 		http.Error(w, "Failed to log in", http.StatusBadRequest)
 		return
 	}
+	response := GetAndSignResponse{
+		User:            user,
+		SignedChallenge: signedChallenge,
+	}
 
-	//Takes the cookie returned from Login() and writes it to the response
-	http.SetCookie(w, cookie)
-	w.Write([]byte("Login successful and cookie sent"))
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+		return
+	}
 }
 
 // Handles register requests from the web client

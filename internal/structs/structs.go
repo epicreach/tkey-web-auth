@@ -31,6 +31,11 @@ type VerifyRequest struct {
 type VerifyResponse struct {
 }
 
+type GetAndSignResponse struct {
+	User            string `json:"user"`
+	SignedChallenge []byte `json:"signed_challenge"`
+}
+
 // AddPublicKeyRequest represents a request to add a new public key for a user
 // It contains the username of the user, the new public key to be added, and the label for the public key
 type AddPublicKeyRequest struct {
