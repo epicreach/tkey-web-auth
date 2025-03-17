@@ -35,6 +35,8 @@ func CallLogin() {
 	_, _, err := auth.GetAndSign(appurl, username)
 	if err != nil {
 		le.Println(err)
+	} else {
+		fmt.Printf("User '%s' has been successfully logged in!\n", username)
 	}
 }
 

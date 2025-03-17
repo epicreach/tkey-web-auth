@@ -8,6 +8,12 @@ type RegisterRequest struct {
 	Label    string `json:"label"`
 }
 
+// UnregisterRequest represents the payload for a unregister request
+// It contains the username of the user attempting to unregister
+type UnregisterRequest struct {
+	Username string `json:"username"`
+}
+
 // LoginRequest represents the payload for a login request
 // It contains the username of the user attempting to log in
 type LoginRequest struct {
