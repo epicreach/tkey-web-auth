@@ -13,6 +13,7 @@ import (
 // Programatically returns a signed challenge. Expects an appurl to request the
 // challenge from and a username to associate with that challenge.
 // It returns an error if unable to get challenge or sign the challenge.
+// It will also return a message related to the error if applicable.
 //
 // Parameters:
 // - appurl: The URL of the application server
@@ -21,14 +22,16 @@ import (
 // Returns:
 // - A signed challenge
 // - An username
+// - A error message string (if applicable)
 // - An error if the login process fails
-func GetAndSign(appurl string, username string) (string, []byte, error) {
+func GetAndSign(appurl string, username string) (string, []byte, string, error) {
 
 	// Fetches the generated challenge from the server
-	challengeResponse, err := getChallenge(appurl, username)
+	challengeResponse, errMsg, err := getChallenge(appurl, username)
+
 	if err != nil {
 		fmt.Println("Error getting challenge")
-		return "", nil, err
+		return "", nil, errMsg, err
 	}
 
 	// TODO: Implement signature verification
@@ -39,9 +42,9 @@ func GetAndSign(appurl string, username string) (string, []byte, error) {
 	// Signs the challenge
 	user, signedChallenge, err := signChallenge(username, challengeResponse)
 	if err != nil {
-		return "", nil, err
+		return "", nil, "", err
 	}
-	return user, signedChallenge, nil
+	return user, signedChallenge, "", nil
 
 }
 
@@ -74,38 +77,46 @@ func signChallenge(username string, challenge *LoginResponse) (string, []byte, e
 // Returns:
 // - A LoginResponse struct containing the challenge and signature
 // - An error if the request fails
-func getChallenge(appurl string, user string) (*LoginResponse, error) {
+func getChallenge(appurl string, user string) (*LoginResponse, string, error) {
 	endpoint := "/api/login"
 
 	c := &http.Client{}
 
 	body, err := json.Marshal(LoginRequest{Username: user})
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	// Get the signature and message from the endpoint
 	resp, err := c.Post(appurl+endpoint, "application/json", bytes.NewBuffer(body))
+
 	if err != nil {
-		return nil, err
+		return nil, "", err
+	}
+	defer resp.Body.Close()
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, "", err
+	}
+
+	respBodyStr := string(respBody)
+
+	if err != nil {
+		return nil, "", err
 	}
 
 	switch resp.StatusCode {
 	case http.StatusOK:
 		// Continue processing
 	case http.StatusNotFound:
-		return nil, fmt.Errorf("user not found")
+		return nil, respBodyStr, fmt.Errorf("user not found")
 	case http.StatusBadRequest:
-		return nil, fmt.Errorf("invalid request body or missing username")
+		return nil, respBodyStr, fmt.Errorf("invalid request body or missing username")
 	case http.StatusInternalServerError:
-		return nil, fmt.Errorf("unable to read user data")
+		return nil, respBodyStr, fmt.Errorf("unable to read user data")
 	default:
-		return nil, fmt.Errorf("unexpected error: %s", resp.Status)
-	}
-
-	respBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("error reading response body")
+		return nil, respBodyStr, fmt.Errorf("unexpected error: %s", resp.Status)
 	}
 
 	// Decode the response body into a LoginResponse struct
@@ -113,10 +124,10 @@ func getChallenge(appurl string, user string) (*LoginResponse, error) {
 	err = json.Unmarshal(respBody, &res)
 
 	if err != nil {
-		return nil, fmt.Errorf("error decoding challenge response")
+		return nil, "", fmt.Errorf("error decoding challenge response")
 	}
 
-	return res, nil
+	return res, "", nil
 }
 
 // TODO: Uncomment once server verification is implemented

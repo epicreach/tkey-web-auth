@@ -7,7 +7,6 @@ import (
 	"crypto/ed25519"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 )
 
@@ -22,23 +21,26 @@ import (
 //
 // Returns:
 //   - error: An error if the registration process fails, otherwise nil
-func Register(appurl string, username string, label string) error {
+//   - string: A string containing the error message from the application. Will be empty string if no error occured.
+func Register(appurl string, username string, label string) (*http.Response, error) {
+
 	pubkey, err := tkey.GetTkeyPubKey()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	regurl := appurl + "/api/register"
-	err = sendRequest(regurl, pubkey, username, label)
+	res, err := sendRequest(regurl, pubkey, username, label)
+
 	if err != nil {
-		return err
+		return res, err
 	}
 
-	return nil
+	return res, nil
 }
 
 // sendRequest sends a registration request to the specified application URL with the provided public key, username, and label
-// It returns an error if the request fails or if the server responds with a status code indicating an error
+// It returns an error if the request fails or if the server responds with a status code indicating an error. It also returns a response body if an error occurs.
 //
 // Parameters:
 // - appurl: The URL of the application to which the registration request is sent
@@ -48,33 +50,34 @@ func Register(appurl string, username string, label string) error {
 //
 // Returns:
 // - An error if the request fails or if the server responds with an error status code
-func sendRequest(appurl string, pubkey ed25519.PublicKey, username string, label string) error {
+// - A string containing the body of the response in case of error.
+
+func sendRequest(appurl string, pubkey ed25519.PublicKey, username string, label string) (*http.Response, error) {
 	c := &http.Client{}
 
 	data := RegisterRequest{Username: username, Pubkey: []byte(pubkey), Label: label}
 	reqBody, err := json.Marshal(data)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
 	res, err := c.Post(appurl, "application/json", bytes.NewBuffer(reqBody))
-	if err != nil {
-		log.Fatal(err)
-	}
 
-	defer res.Body.Close()
+	if err != nil {
+		return res, err
+	}
 
 	switch res.StatusCode {
 	case http.StatusOK:
 		fmt.Printf("User '%s' has been successfully created!\n", username)
-		return nil
+		return res, nil
 	case http.StatusConflict:
-		return fmt.Errorf("user '%s' already exists", username)
+		return res, fmt.Errorf("user '%s' already exists", username)
 	case http.StatusBadRequest:
-		return fmt.Errorf("invalid request body for user '%s'", username)
+		return res, fmt.Errorf("invalid request body for user '%s'", username)
 	case http.StatusInternalServerError:
-		return fmt.Errorf("unable to save user data for user '%s'", username)
+		return res, fmt.Errorf("unable to save user data for user '%s'", username)
 	default:
-		return fmt.Errorf("unexpected error: %s", res.Status)
+		return res, fmt.Errorf("unexpected error: %s", res.Status)
 	}
 }

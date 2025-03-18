@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
 	"net/http"
 	"strings"
 )
@@ -91,9 +92,9 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	username := requestBody["username"]
-	user, signedChallenge, err := auth.GetAndSign(origin, username)
+	user, signedChallenge, errMsg, err := auth.GetAndSign(origin, username)
 	if err != nil {
-		http.Error(w, "Failed to log in", http.StatusBadRequest)
+		http.Error(w, errMsg, http.StatusBadRequest)
 		return
 	}
 	response := GetAndSignResponse{
@@ -117,6 +118,13 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 // - 400 Bad Request: if the request body is invalid or cannot be parsed
 // - 500 Internal Server Error: if there is an error adding the public key
 // - 200 OK: if the public key is added successfully
+//
+//
+//	Error messages:
+//
+//	If an error occurs the function will return an http Error containing both the error code but also an error message retrieved from the applications response
+//	to the request. This response is later retrieved by the frontend and displayed to the user.
+
 func registerHandler(w http.ResponseWriter, r *http.Request) {
 	// Get origin from request header and replace port with 8080
 	origin := r.Header.Get("Origin")
@@ -129,9 +137,20 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 
 	username := requestBody["username"]
 	label := requestBody["label"]
-	err := auth.Register(origin, username, label)
+	resp, err := auth.Register(origin, username, label)
 	if err != nil {
-		http.Error(w, "Failed to register", http.StatusBadRequest)
+
+		// Reads the response body message and passes it to the http response.
+		defer resp.Body.Close()
+		respBody, err := io.ReadAll(resp.Body)
+
+		if err != nil {
+			http.Error(w, "Failed to read response body", http.StatusInternalServerError)
+			return
+		}
+
+		respBodyStr := string(respBody)
+		http.Error(w, respBodyStr, http.StatusBadRequest)
 		return
 	}
 	w.WriteHeader(http.StatusOK)
