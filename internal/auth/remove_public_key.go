@@ -22,8 +22,7 @@ import (
 // - An error if the process fails
 func RemovePublicKey(appurl string, username string, label string, sessionCookie string) error {
 	requestBody := RemovePublicKeyRequest{
-		Username: username,
-		Label:    label,
+		Label: label,
 	}
 
 	return sendRemovePublicKeyRequest(appurl, requestBody, sessionCookie)
@@ -68,6 +67,6 @@ func sendRemovePublicKeyRequest(appurl string, requestBody RemovePublicKeyReques
 		return fmt.Errorf("%s", responseBody["message"])
 	}
 
-	fmt.Printf("Public key removed successfully for user '%s'\n", requestBody.Username)
+	fmt.Printf("Public key removed successfully")
 	return nil
 }

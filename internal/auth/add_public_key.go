@@ -28,9 +28,8 @@ func AddPublicKey(appurl string, username string, label string, sessionCookie st
 	}
 
 	requestBody := AddPublicKeyRequest{
-		Username: username,
-		Pubkey:   []byte(pubkey),
-		Label:    label,
+		Pubkey: []byte(pubkey),
+		Label:  label,
 	}
 
 	return sendAddPublicKeyRequest(appurl, requestBody, sessionCookie)
@@ -74,6 +73,6 @@ func sendAddPublicKeyRequest(appurl string, requestBody AddPublicKeyRequest, ses
 		return fmt.Errorf("%s", responseBody["message"])
 	}
 
-	fmt.Printf("Public key added successfully for user '%s'\n", requestBody.Username)
+	fmt.Printf("Public key added successfully")
 	return nil
 }
