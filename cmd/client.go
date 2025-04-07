@@ -139,8 +139,11 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 	label := requestBody["label"]
 	resp, err := auth.Register(origin, username, label)
 	if err != nil {
+		if resp == nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
 
-		// Reads the response body message and passes it to the http response.
 		defer resp.Body.Close()
 		respBody, err := io.ReadAll(resp.Body)
 

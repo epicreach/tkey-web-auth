@@ -42,10 +42,9 @@ func GetAndSign(appurl string, username string) (string, []byte, string, error) 
 	// Signs the challenge
 	user, signedChallenge, err := signChallenge(username, challengeResponse)
 	if err != nil {
-		return "", nil, "", err
+		return "", nil, err.Error(), err
 	}
 	return user, signedChallenge, "", nil
-
 }
 
 // An internal function that signs the challenge using the tkey
@@ -61,7 +60,6 @@ func signChallenge(username string, challenge *LoginResponse) (string, []byte, e
 	fmt.Printf("Touch the TKey to continue...\n")
 	sig, err := tkey.Sign([]byte(challenge.Challenge))
 	if err != nil {
-		fmt.Println("Error Signing Challenge")
 		return "", nil, err
 	}
 
