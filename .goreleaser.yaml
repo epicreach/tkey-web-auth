@@ -1,0 +1,56 @@
+version: 2
+
+project_name: tkeyauth
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: tkeyauth
+    main: ./cmd/main.go
+    binary: tkeyauth
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - windows
+    goarch:
+      - amd64
+      - arm64
+
+archives:
+  - formats: ["tar.gz"]
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+      {{- if .Arm }}v{{ .Arm }}{{ end }}
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    files:
+      - LICENSE
+      - README.md
+      - internal/tkey/signer.bin-v1.0.3
+
+checksum:
+  name_template: "{{ .ProjectName }}_checksums.txt"
+
+release:
+  github:
+    owner: epicreach
+    name: tkey-web-authenticator
+  draft: false
+  prerelease: false
+  footer: >-
+
+    ---
+
+    Released by [GoReleaser](https://github.com/goreleaser/goreleaser).
+
+changelog:
+  use: git
+  sort: asc
