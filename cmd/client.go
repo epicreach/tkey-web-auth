@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"strings"
 )
 
 func main() {
@@ -185,15 +184,4 @@ func removePublicKeyHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("Public key removed successfully"))
-}
-
-// TODO: Auto-detect which port application is running on
-// Change port of request to 8080
-func replaceOriginPort(origin string) string {
-	parts := strings.Split(origin, ":")
-	if len(parts) > 1 {
-		parts[len(parts)-1] = "8080"
-		origin = strings.Join(parts, ":")
-	}
-	return origin
 }
