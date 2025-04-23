@@ -21,9 +21,10 @@ import (
 func getSecret(udi string, pinentryProgram string) ([]byte, error) {
 	// Displaying the Unique Device Identifier (UDI) so the user will
 	// know which stick they have plugged in.
-	desc := fmt.Sprintf("%s needs a User Supplied Secret\n"+
+	desc := fmt.Sprintf("%s: Please enter an optional User Supplied Secret "+
 		"(USS) for your TKey with number:\n"+
-		"%v", progname, udi)
+		"%v\n"+
+		"\nLeave the field blank if you do not want to use a USS.", progname, udi)
 
 	if runtime.GOOS == "darwin" && pinentryProgram == "" {
 		pin, err := macOSPrompt(desc, progname)
